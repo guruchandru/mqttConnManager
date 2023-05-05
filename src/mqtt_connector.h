@@ -90,11 +90,11 @@ typedef struct {
   int delay;
 } mqtt_timer_t;
 
-void on_connect(struct mosquitto *mosq, void *obj, int reason_code);
-void on_disconnect(struct mosquitto *mosq, void *obj, int reason_code);
-void on_subscribe(struct mosquitto *mosq, void *obj, int mid, int qos_count, const int *granted_qos);
-void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg);
-void on_publish(struct mosquitto *mosq, void *obj, int mid);
+void on_connect(struct mosquitto *mosq, void *obj, int reason_code, int flag, const mosquitto_property *props);
+void on_disconnect(struct mosquitto *mosq, void *obj, int reason_code, const mosquitto_property *props);
+void on_subscribe(struct mosquitto *mosq, void *obj, int mid, int qos_count, const int *granted_qos, const mosquitto_property *props);
+void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg, const mosquitto_property *props);
+void on_publish(struct mosquitto *mosq, void *obj, int mid, int reason_code, const mosquitto_property *props);
 
 int writeToDBFile(char *db_file_path, char *data, size_t size);
 bool webcfg_mqtt_init();
