@@ -76,13 +76,17 @@ void sendRusEventWebcfgOnMessage(char *mqttdata, int dataSize)
 		event.data = dataIn;
 		event.type = RBUS_EVENT_GENERAL;
 
+		MqttCMInfo("Before rbusEvent_Publish\n");
 		rbusError_t rc = rbusEvent_Publish(get_global_rbus_handle(), &event);
+		MqttCMInfo("After rbusEvent_Publish\n");
 
 		rbusValue_Release(value);
 		rbusObject_Release(dataIn);
 
 		if(rc != RBUS_ERROR_SUCCESS)
 			MqttCMError("provider: rbusEvent_Publish onmessage event failed: %d\n", rc);
+		else
+			MqttCMInfo("publishing onmessafe event success with rc %d\n", rc);
 	}
 }
 
