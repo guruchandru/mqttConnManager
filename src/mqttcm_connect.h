@@ -38,7 +38,6 @@
 #include <rbus/rbus_property.h>
 #include <rbus/rbus_value.h>
 #include <cimplog.h>
-#include <uuid/uuid.h>
 
 #define MQTT_COMPONENT_NAME  "mqttConnManager"
 
@@ -95,11 +94,11 @@ typedef struct comp_topic_name
 
 int AddToSubscriptionList(char *compName,char *topic);
 const char *getComponentFromTopicName(char *topic);
-void on_connect(struct mosquitto *mosq, void *obj, int reason_code, int flag, const mosquitto_property *props);
-void on_disconnect(struct mosquitto *mosq, void *obj, int reason_code, const mosquitto_property *props);
-void on_subscribe(struct mosquitto *mosq, void *obj, int mid, int qos_count, const int *granted_qos, const mosquitto_property *props);
-void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg, const mosquitto_property *props);
-void on_publish(struct mosquitto *mosq, void *obj, int mid, int reason_code, const mosquitto_property *props);
+void on_connect(struct mosquitto *mosq, void *obj, int reason_code);
+void on_disconnect(struct mosquitto *mosq, void *obj, int reason_code);
+void on_subscribe(struct mosquitto *mosq, void *obj, int mid, int qos_count, const int *granted_qos);
+void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg);
+void on_publish(struct mosquitto *mosq, void *obj, int mid);
 int isReconnectNeeded();
 
 int writeToDBFile(char *db_file_path, char *data, size_t size);

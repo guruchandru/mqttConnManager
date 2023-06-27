@@ -195,7 +195,6 @@ bool mqttCMConnectBroker()
 				MqttCMError("Error initializing mosq instance\n");
 				return MOSQ_ERR_NOMEM;
 			}
-			mosquitto_int_option(mosq, MOSQ_OPT_PROTOCOL_VERSION, MQTT_PROTOCOL_V5);
 			struct libmosquitto_tls *tls;
 			tls = malloc (sizeof (struct libmosquitto_tls));
 			if(tls)
@@ -265,11 +264,11 @@ bool mqttCMConnectBroker()
 				{
 					tls_count = 0;
 					//connect to mqtt broker
-					mosquitto_connect_v5_callback_set(mosq, on_connect);
-					mosquitto_disconnect_v5_callback_set(mosq, on_disconnect);
-					mosquitto_subscribe_v5_callback_set(mosq, on_subscribe);
-					mosquitto_message_v5_callback_set(mosq, on_message);
-					mosquitto_publish_v5_callback_set(mosq, on_publish);
+					mosquitto_connect_callback_set(mosq, on_connect);
+					mosquitto_disconnect_callback_set(mosq, on_disconnect);
+					mosquitto_subscribe_callback_set(mosq, on_subscribe);
+					mosquitto_message_callback_set(mosq, on_message);
+					mosquitto_publish_callback_set(mosq, on_publish);
 
 					MqttCMDebug("port %d\n", port);
 
@@ -303,7 +302,7 @@ bool mqttCMConnectBroker()
 						}
 						MqttCMInfo("port int %d\n", port);
 
-						rc = mosquitto_connect_bind_v5(mosq, broker, port, KEEPALIVE, hostip, NULL);
+						rc = mosquitto_connect_bind(mosq, broker, port, KEEPALIVE, hostip);
 
 						MqttCMInfo("mosquitto_connect_bind rc %d\n", rc);
 						if(rc != MOSQ_ERR_SUCCESS)
@@ -413,7 +412,7 @@ int validateForMqttInit()
 }
 
 // callback called when the client receives a CONNACK message from the broker
-void on_connect(struct mosquitto *mosq, void *obj, int reason_code, int flag, const mosquitto_property *props)
+void on_connect(struct mosquitto *mosq, void *obj, int reason_code)
 {
         MqttCMInfo("on_connect: reason_code %d %s\n", reason_code, mosquitto_connack_string(reason_code));
         if(reason_code != 0)
@@ -455,7 +454,7 @@ void on_connect(struct mosquitto *mosq, void *obj, int reason_code, int flag, co
 }
 
 // callback called when the broker sends a SUBACK in response to a SUBSCRIBE.
-void on_subscribe(struct mosquitto *mosq, void *obj, int mid, int qos_count, const int *granted_qos, const mosquitto_property *props)
+void on_subscribe(struct mosquitto *mosq, void *obj, int mid, int qos_count, const int *granted_qos)
 {
         int i;
         bool have_subscription = false;
@@ -482,7 +481,7 @@ void on_subscribe(struct mosquitto *mosq, void *obj, int mid, int qos_count, con
 }
 
 /* callback called when the client receives a message. */
-void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg, const mosquitto_property *props)
+void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg)
 {
 	if(msg !=NULL)
 	{
@@ -579,7 +578,7 @@ const char *getComponentFromTopicName(char *topic)
 	return NULL;
 }
 
-void on_publish(struct mosquitto *mosq, void *obj, int mid, int reason_code, const mosquitto_property *props)
+void on_publish(struct mosquitto *mosq, void *obj, int mid)
 {
 	MqttCMInfo("Message with mid %d has been published.\n", mid);
 
@@ -588,7 +587,7 @@ void on_publish(struct mosquitto *mosq, void *obj, int mid, int reason_code, con
 }
 
 // callback called when the client gets DISCONNECT command from the broker
-void on_disconnect(struct mosquitto *mosq, void *obj, int reason_code, const mosquitto_property *props)
+void on_disconnect(struct mosquitto *mosq, void *obj, int reason_code)
 {
         MqttCMInfo("on_disconnect: reason_code %d %s\n", reason_code, mosquitto_reason_string(reason_code));
 
@@ -747,23 +746,7 @@ void publish_notify_mqtt(char *pub_topic, void *payload, ssize_t len)
 {
         int rc;
 
-	mosquitto_property *props = NULL;
-	uuid_t uuid;
-	uuid_generate_time(uuid);
-
-	char uuid_str[37];
-	uuid_unparse(uuid, uuid_str);
-
-	MqttCMInfo("uuidv1 generated is %s\n", uuid_str);
-
-	int ret = mosquitto_property_add_string_pair(&props, MQTT_PROP_USER_PROPERTY, "uuid", uuid_str);
-
-	if(ret != MOSQ_ERR_SUCCESS)
-	{
-		MqttCMError("Failed to add property: %d\n", ret);
-	}
-
-	rc = mosquitto_publish_v5(mosq, NULL, pub_topic, len, payload, 2, false, props);
+	rc = mosquitto_publish(mosq, NULL, pub_topic, len, payload, 2, false);
 
 	MqttCMInfo("Publish rc %d\n", rc);
         if(rc != MOSQ_ERR_SUCCESS)
