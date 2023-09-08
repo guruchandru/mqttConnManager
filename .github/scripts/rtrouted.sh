@@ -10,3 +10,7 @@ make -C build/rbus && make -C build/rbus install
 export PATH=${RBUS_INSTALL_DIR}/usr/bin:${PATH} && \
 export LD_LIBRARY_PATH=${RBUS_INSTALL_DIR}/usr/lib:${LD_LIBRARY_PATH}
 nohup rtrouted -f -l DEBUG > /tmp/rtrouted_log.txt &
+sleep 30
+ps aux
+sleep 30
+cat /tmp/rtrouted_log.txt
