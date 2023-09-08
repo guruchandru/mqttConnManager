@@ -58,8 +58,13 @@ jobs:
         working-directory: build
         run: |
           build-wrapper-linux-x86/build-wrapper-linux-x86-64 --out-dir bw-output make all test
+          sleep 60
+          echo "****************** rtrouted log***********************"
+          cat /tmp/rtrouted_log.txt
+          echo "****************** Test log***********************"
           cat /home/runner/work/mqttConnManager/mqttConnManager/build/Testing/Temporary/LastTest.log
-          ps
+          echo "****************** ps command***********************"
+          ps aux
 
       - name: Merge GCOV Reports for Sonarcloud
         working-directory: build
