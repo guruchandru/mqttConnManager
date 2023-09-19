@@ -32,9 +32,12 @@
 #define MAX_MQTT_LEN         128
 
 int rbusRegWebcfgDataElements();
-void sendRbusEventWebcfgOnSubscribe();
-void sendRbusEventWebcfgOnMessage(char *mqttdata, int dataSize, char *topic_name);
-void sendRbusEventWebcfgOnPublish(int mid);
-void sendRbusErrorToMqtt(rbusError_t rc, char *topic_name);
+rbusError_t sendRbusEventWebcfgOnSubscribe();
+rbusError_t sendRbusEventWebcfgOnMessage(char *mqttdata, int dataSize, char *topic_name);
+rbusError_t sendRbusEventWebcfgOnPublish(int mid);
+int sendRbusErrorToMqtt(rbusError_t rc, char *topic_name);
 char * createcJsonSchema(rbusError_t rc, char *topic_name);
 char * createMqttPubHeader(char * payload, ssize_t * payload_len);
+rbusError_t webcfgMqttSubscribeHandler(rbusHandle_t handle, rbusEventSubAction_t action, const char* eventName, rbusFilter_t filter, int32_t interval, bool* autoPublish);
+rbusError_t webcfgMqttOnMessageHandler(rbusHandle_t handle, rbusEventSubAction_t action, const char* eventName, rbusFilter_t filter, int32_t interval, bool* autoPublish);
+rbusError_t webcfgMqttOnPublishHandler(rbusHandle_t handle, rbusEventSubAction_t action, const char* eventName, rbusFilter_t filter, int32_t interval, bool* autoPublish);

@@ -154,20 +154,6 @@ void test_mqtt_rand_expiration(void)
     CU_ASSERT(ts.tv_nsec >= 0 && ts.tv_nsec < 1000000000);
 }
 
-int init_suite(void)
-{
-    // Initialize any necessary resources or setups
-    return 0;
-}
-
-// Test suite cleanup function
-
-int clean_suite(void)
-{
-    // Clean up any allocated resources or memory
-    return 0;
-}
-
 void add_suites( CU_pSuite *suite )
 {
     *suite = CU_add_suite( "tests", NULL, NULL );

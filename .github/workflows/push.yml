@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021 Comcast Cable Communications Management, LLC
+# SPDX-FileCopyrightText: 2023 Comcast Cable Communications Management, LLC
 # SPDX-License-Identifier: Apache-2.0
 
 name: CI
@@ -52,21 +52,48 @@ jobs:
       - name: Build
         working-directory: build
         run: |
-          build-wrapper-linux-x86/build-wrapper-linux-x86-64 --out-dir bw-output make all test
+          ps aux
+          build-wrapper-linux-x86/build-wrapper-linux-x86-64 --out-dir bw-output make
+
+      - name: Get rtrouted  Binary
+        working-directory: build
+        run: |
+          ../.github/scripts/rtrouted.sh
+
+      - name: Unit tests run
+        working-directory: build
+        run: |
+          export RBUS_ROOT=${HOME}/rbus
+          export RBUS_INSTALL_DIR=${RBUS_ROOT}/install
+          export PATH=${RBUS_INSTALL_DIR}/usr/bin:${PATH}
+          export LD_LIBRARY_PATH=${RBUS_INSTALL_DIR}/usr/lib:${LD_LIBRARY_PATH}
+          ./tests/test_mqttcm_component -a
+          ./tests/test_mqttcm_timer -a
+          ./tests/test_mqttcm_webcfg -a
+          ./tests/test_mqttcm_generic -a
+          ./tests/test_mqttcm_connect -a
+          ./tests/test_mqttcm_rbus -a
+          ./tests/test_mock_mqttcm_connect -a
+
+      - name: Stop rtrouted
+        run: |
+          killall -9 rtrouted
 
       - name: Merge GCOV Reports for Sonarcloud
         working-directory: build
         run: |
           gcovr --sonarqube coverage.xml -r ..
 
-      - name: Upload SonarCloud
-        run: |
-          build/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=https://sonarcloud.io -Dproject.settings=.sonar-project.properties -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Upload Codecov.io
         uses: codecov/codecov-action@v1
         with:
           directory: .
           fail_ci_if_error: true
+
+     # - name: Upload SonarCloud
+     #   run: |
+     #     build/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=https://sonarcloud.io -Dproject.settings=.sonar-project.properties -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+     #   env:
+     #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+

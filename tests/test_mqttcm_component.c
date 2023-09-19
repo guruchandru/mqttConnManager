@@ -131,19 +131,46 @@ void test_UpdateSubscriptionIdToList_Failure(void)
     CU_ASSERT_EQUAL(result, 0);
 }
 
-
-int init_suite(void)
+// Test function for printList
+void test_printList(void)
 {
-    // Initialize any necessary resources or setups
-    return 0;
+    AddToSubscriptionList("Comp", "Tpc",1);
+    int result = printList();
+    CU_ASSERT_EQUAL(result, 1);
 }
 
-// Test suite cleanup function
-
-int clean_suite(void)
+// Test function for stripAndAddModuleName
+void test_stripAndAddModuleName(void)
 {
-    // Clean up any allocated resources or memory
-    return 0;
+    char inputString[] = "This is a test string with module1 and module2.";
+    const char* substr = "module1";
+    const char* newstr = "moduleX";
+
+    int result = stripAndAddModuleName(inputString, substr, newstr);
+    CU_ASSERT_EQUAL(result, 1);
+}
+
+// Test function for GetTopicFromFileandUpdateList
+void test_GetTopicFromFileandUpdateList()
+{
+    int result = GetTopicFromFileandUpdateList();
+    CU_ASSERT_EQUAL(result, 1);
+}
+
+// Test function for AddSubscribeTopicToFile
+void test_AddSubscribeTopicToFile_success()
+{
+    char* compName = "Comp1";
+    char* topic = "Topic1";
+
+    int result = AddSubscribeTopicToFile(compName, topic);
+    CU_ASSERT_EQUAL(result, 1);
+}
+
+void test_AddSubscribeTopicToFile_failure()
+{
+    int result = AddSubscribeTopicToFile(NULL, NULL);
+    CU_ASSERT_EQUAL(result, 0);
 }
 
 void add_suites( CU_pSuite *suite )
@@ -160,6 +187,11 @@ void add_suites( CU_pSuite *suite )
     CU_add_test( *suite, "test GetTopicFromSubcribeId_Failure", test_GetTopicFromSubcribeId_Failure);
     CU_add_test( *suite, "test UpdateSubscriptionIdToList_Success", test_UpdateSubscriptionIdToList_Success);
     CU_add_test( *suite, "test UpdateSubscriptionIdToList_Failure", test_UpdateSubscriptionIdToList_Failure);
+    CU_add_test( *suite, "test printList", test_printList);
+    CU_add_test( *suite, "test stripAndAddModuleName", test_stripAndAddModuleName);
+    CU_add_test( *suite, "test GetTopicFromFileandUpdateList", test_GetTopicFromFileandUpdateList);
+    CU_add_test( *suite, "test AddSubscribeTopicToFile_success", test_AddSubscribeTopicToFile_success);
+    CU_add_test( *suite, "test AddSubscribeTopicToFile_failure", test_AddSubscribeTopicToFile_failure);
 }
 
 int main( int argc, char *argv[] )

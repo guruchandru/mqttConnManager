@@ -28,8 +28,9 @@ int webcfg_subscribe = 0;
 int webcfg_onmessage = 0;
 int webcfg_onpublish = 0;
 
-void sendRbusEventWebcfgOnSubscribe()
+rbusError_t sendRbusEventWebcfgOnSubscribe()
 {
+	rbusError_t rc = RBUS_ERROR_BUS_ERROR;
 	if(webcfg_subscribe)
 	{
 		rbusEvent_t event = {0};
@@ -48,7 +49,7 @@ void sendRbusEventWebcfgOnSubscribe()
 		event.data = data;
 		event.type = RBUS_EVENT_GENERAL;
 
-		rbusError_t rc = rbusEvent_Publish(get_global_rbus_handle(), &event);
+		rc = rbusEvent_Publish(get_global_rbus_handle(), &event);
 
 		rbusValue_Release(value);
 		rbusObject_Release(data);
@@ -56,10 +57,12 @@ void sendRbusEventWebcfgOnSubscribe()
 		if(rc != RBUS_ERROR_SUCCESS)
 			MqttCMError("provider: rbusEvent_Publish onsubscribe event failed: %d\n", rc);
 	}
+	return rc;
 }
 
-void sendRbusEventWebcfgOnMessage(char *mqttdata, int dataSize, char *topic_name)
+rbusError_t sendRbusEventWebcfgOnMessage(char *mqttdata, int dataSize, char *topic_name)
 {
+		rbusError_t rc = RBUS_ERROR_BUS_ERROR;
 		rbusEvent_t event = {0};
 		rbusObject_t dataIn;
 		rbusValue_t value;
@@ -78,7 +81,7 @@ void sendRbusEventWebcfgOnMessage(char *mqttdata, int dataSize, char *topic_name
 		event.data = dataIn;
 		event.type = RBUS_EVENT_GENERAL;
 
-		rbusError_t rc = rbusEvent_Publish(get_global_rbus_handle(), &event);
+		rc = rbusEvent_Publish(get_global_rbus_handle(), &event);
 
 		rbusValue_Release(value);
 		rbusObject_Release(dataIn);
@@ -88,10 +91,12 @@ void sendRbusEventWebcfgOnMessage(char *mqttdata, int dataSize, char *topic_name
 			MqttCMError("provider: rbusEvent_Publish onmessage event failed: %d\n", rc);
 			sendRbusErrorToMqtt(rc,topic_name);
 		}
+		return rc;
 }
 
-void sendRbusEventWebcfgOnPublish(int mid)
+rbusError_t sendRbusEventWebcfgOnPublish(int mid)
 {
+	rbusError_t rc = RBUS_ERROR_BUS_ERROR;
 	if(webcfg_onpublish)
 	{
 		char msg[256] = { 0 };
@@ -113,7 +118,7 @@ void sendRbusEventWebcfgOnPublish(int mid)
 		event.data = data;
 		event.type = RBUS_EVENT_GENERAL;
 
-		rbusError_t rc = rbusEvent_Publish(get_global_rbus_handle(), &event);
+		rc = rbusEvent_Publish(get_global_rbus_handle(), &event);
 
 		rbusValue_Release(value);
 		rbusObject_Release(data);
@@ -121,9 +126,10 @@ void sendRbusEventWebcfgOnPublish(int mid)
 		if(rc != RBUS_ERROR_SUCCESS)
 			MqttCMError("provider: rbusEvent_Publish onpublish event failed: %d\n", rc);
 	}
+	return rc;
 }
 
-void sendRbusErrorToMqtt(rbusError_t rc, char *topic_name)
+int sendRbusErrorToMqtt(rbusError_t rc, char *topic_name)
 {
 	char topic_str[256] = { 0 };
 	char locationID[64] = { 0 };
@@ -133,7 +139,7 @@ void sendRbusErrorToMqtt(rbusError_t rc, char *topic_name)
 	if(topic_name == NULL)
 	{
 		MqttCMError("topic name is NULL for sendRbusErrorToMqtt\n");
-		return;	
+		return 1;
 	}
 	const char *module = getComponentFromTopicName(topic_name);
 	Get_Mqtt_LocationId(locationID);
@@ -148,7 +154,8 @@ void sendRbusErrorToMqtt(rbusError_t rc, char *topic_name)
 	char * pub_payload = createMqttPubHeader(payload, &payload_len);
 	MqttCMInfo("topic_str is:%s,payload_len:%zu\n", topic_str,payload_len);
 	MqttCMInfo("publish_error_payload is:%s\n", pub_payload);	
-	publish_notify_mqtt(topic_str, pub_payload, payload_len);
+	int ret = publish_notify_mqtt(topic_str, pub_payload, payload_len);
+	return ret;
 }
 
 char * createMqttPubHeader(char * payload, ssize_t * payload_len)
@@ -161,6 +168,7 @@ char * createMqttPubHeader(char * payload, ssize_t * payload_len)
 
 	if(pub_headerlist != NULL)
 	{
+		memset(pub_headerlist, 0, sizeof(char) * 1024);
 		if(payload != NULL)
 		{
 			content_type = (char *) malloc(sizeof(char)*MAX_BUF_SIZE);
