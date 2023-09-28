@@ -64,6 +64,7 @@
 #define MQTT_CONNSTATUS_PARAM     "Device.X_RDK_MQTT.ConnectionStatus"
 #define MQTT_SUBSCRIBE_PARAM      "Device.X_RDK_MQTT.Subscribe"
 #define MQTT_PUBLISH_PARAM        "Device.X_RDK_MQTT.Publish"
+#define MQTT_INTERFACE_PARAM      "Device.X_RDK_WanManager.CurrentActiveInterface"
 
 #define MAX_MQTT_RETRY 8
 #define MQTT_RETRY_ERR -1
@@ -146,3 +147,4 @@ int get_global_shutdown();
 int valueChangeCheck(char *valueStored, char *valueChanged);
 void rbus_log_handler(rbusLogLevel level, const char* file, int line, int threadId, char* message);
 int mqtt_retry(mqtt_timer_t *timer);
+int subscribeToCurrentActiveInterfaceEvent();

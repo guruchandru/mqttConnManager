@@ -32,6 +32,8 @@ static char* connMode = NULL;
 static int mqinit = 0;
 rbusHandle_t rbus_handle;
 static char* mqttdata = NULL;
+static char* bind_interface = NULL;
+static int current_active_interface = 0;
 static int broker_connect = 0;
 static int reconnectFlag = 0;
 static int valueChangeFlag= 0;
@@ -87,6 +89,16 @@ pthread_mutex_t *get_global_mqtt_mut(void)
 int isReconnectNeeded()
 {
 	return reconnectFlag;
+}
+
+char* get_mqtt_interface()
+{
+	return bind_interface;
+}
+
+void set_mqtt_interface(char * value)
+{
+	bind_interface = strdup(value);
 }
 
 int valueChangeCheck(char *valueStored, char *valueChanged)
@@ -161,7 +173,6 @@ bool mqttCMConnectBroker()
 	mqtt_timer_t mqtt_timer;
 	int tls_count = 0;
 	int rt = 0;
-	char *bind_interface = NULL;
 	char *hostip = NULL;
 
 	checkMqttParamSet();
@@ -276,20 +287,13 @@ bool mqttCMConnectBroker()
 
 					init_mqtt_timer(&mqtt_timer, MAX_MQTT_RETRY);
 
-					get_interface(&bind_interface);
-					if(bind_interface != NULL)
+					//Flag to denote received value change in CurrentActiveInterface
+					if(current_active_interface == 0)
 					{
-						MqttCMInfo("Interface fetched for mqtt connect bind is %s\n", bind_interface);
-						rt = getHostIPFromInterface(bind_interface, &hostip);
-						if(rt == 1)
-						{
-							MqttCMInfo("hostip fetched from getHostIPFromInterface is %s\n", hostip);
-						}
-						else
-						{
-							MqttCMError("getHostIPFromInterface failed %d\n", rt);
-						}
+						get_interface(&bind_interface);
+						current_active_interface = 0;
 					}
+
 					while(1)
 					{
 
@@ -304,6 +308,19 @@ bool mqttCMConnectBroker()
 						}
 						MqttCMDebug("port int %d\n", port);
 
+						if(bind_interface != NULL)
+						{
+							MqttCMInfo("Interface fetched for mqtt connect bind is %s\n", bind_interface);
+							rt = getHostIPFromInterface(bind_interface, &hostip);
+							if(rt == 1)
+							{
+								MqttCMInfo("hostip fetched from getHostIPFromInterface is %s\n", hostip);
+							}
+							else
+							{
+								MqttCMError("getHostIPFromInterface failed %d\n", rt);
+							}
+						}
 						rc = mosquitto_connect_bind_v5(mosq, broker, port, KEEPALIVE, hostip, NULL);
 
 						MqttCMInfo("mosquitto_connect_bind rc %d\n", rc);
@@ -1997,4 +2014,61 @@ void get_interface(char **interface)
                 MqttCMDebug("interface fetched is %s\n", *interface);
         }
 #endif
+}
+
+static void currentActiveInterfaceEventReceiveHandler(
+    rbusHandle_t rbus_handle,
+    rbusEvent_t const* event,
+    rbusEventSubscription_t* subscription)
+{
+	(void)rbus_handle;
+	char * interface = NULL;
+	rbusValue_t newValue = rbusObject_GetValue(event->data, "value");
+	rbusValue_t oldValue = rbusObject_GetValue(event->data, "oldValue");
+	MqttCMInfo("Consumer receiver ValueChange event for param %s\n", event->name);
+
+	if(newValue)
+	{
+		interface = (char *) rbusValue_GetString(newValue, NULL);
+		set_mqtt_interface(interface);
+	}
+
+	if(newValue !=NULL && oldValue!=NULL && get_mqtt_interface()!=NULL)
+	{
+		MqttCMInfo("New Value: %s Old Value: %s New Interface Value: %s\n", rbusValue_GetString(newValue, NULL), rbusValue_GetString(oldValue, NULL), get_mqtt_interface());
+		current_active_interface = 1;
+		mosquittoTriggerDisconnect();
+	}
+}
+
+static void currentActiveInterfaceSubscribeAsyncHandler(
+    rbusHandle_t rbus_handle,
+    rbusEventSubscription_t* subscription,
+    rbusError_t error)
+{
+	(void)rbus_handle;
+
+	MqttCMInfo("currentActiveInterface SubscribeAsyncHandler event %s, error %d - %s\n", subscription->eventName, error, rbusError_ToString(error));
+}
+
+
+//Subscribe for Device.X_RDK_WanManager.CurrentActiveInterface
+int subscribeToCurrentActiveInterfaceEvent()
+{
+	int rc = RBUS_ERROR_SUCCESS;
+	MqttCMInfo("Subscribing to %s Event\n", MQTT_INTERFACE_PARAM);
+
+	rc = rbusEvent_SubscribeAsync(
+		rbus_handle,
+		MQTT_INTERFACE_PARAM,
+		currentActiveInterfaceEventReceiveHandler,
+		currentActiveInterfaceSubscribeAsyncHandler,
+		"Webcfg_Interface",
+		10*20);
+
+	if(rc != RBUS_ERROR_SUCCESS)
+	{
+		MqttCMError("%s subscribe failed : %d - %s\n", MQTT_INTERFACE_PARAM, rc, rbusError_ToString(rc));
+	}
+	return rc;
 }

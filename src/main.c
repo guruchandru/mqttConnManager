@@ -68,6 +68,7 @@ int main()
 		{
 			MqttCMInfo("Registering mqtt CM parameters\n");
 			regMqttDataModel();
+			subscribeToCurrentActiveInterfaceEvent();
 			MqttCMInfo("Proceed to mqtt connection with default configuration\n");
 			do
 			{
