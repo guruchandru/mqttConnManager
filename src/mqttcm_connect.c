@@ -181,8 +181,54 @@ bool mqttCMConnectBroker()
 		{
 			username = clientId;
 			MqttCMInfo("clientId is %s username is %s\n", clientId, username);
+/*
+			//execute_mqtt_script(OPENSYNC_CERT);
+			const char *testfile = "/tmp/testmqttfile";
+			if (!freopen(testfile, "r", "/devstdin"))
+			{
+				perror("freopen failed\n");
+				return EXIT_FAILURE;
+			}
 
-			execute_mqtt_script(OPENSYNC_CERT);
+			int value;
+			while (scanf("%d", &value) == 1)
+			{
+				// Process the data as needed
+				MqttCMInfo("Read value: %d\n", value);
+			}
+
+			// Close the redirected stdin
+			fclose(stdin);*/
+			FILE *fp = fopen("/dev/stdin", "r");
+
+			if (NULL != fp)
+			{
+				char str[255] = {'\0'};
+				while (fgets(str, sizeof(str), fp) != NULL)
+				{
+					char *value = NULL;
+
+					if(NULL != (value = strstr(str, key)))
+					{
+						value = value + strlen(key);
+						value[strlen(value)-1] = '\0';
+						*val = strdup(value);
+						break;
+					}
+
+				}
+				fclose(fp);
+			}
+
+			if (NULL == *val)
+			{
+				MqttCMError("val is not present in file\n");
+
+			}
+			else
+			{
+				MqttCMDebug("val fetched is %s\n", *val);
+			}
 
 			if(clientId !=NULL)
 			{
